@@ -2,8 +2,7 @@
 let currentChat = {
     id: null,
     messages: [],
-    context: '',
-    messageCount: 0
+    title: null
 };
 
 let chats = [];
@@ -81,6 +80,9 @@ async function sendMessage() {
         welcomeMessage.remove();
     }
     
+    // Check if this is the first message in a new chat
+    const isFirstMessage = currentChat.messages.length === 0;
+    
     // Add user message to chat
     addMessage('user', prompt);
     userInput.value = '';
@@ -91,6 +93,9 @@ async function sendMessage() {
     const loadingId = showLoading();
     
     try {
+        // Get last 3 messages for context (excluding the current prompt we just added)
+        const contextMessages = currentChat.messages.slice(-4, -1); // Last 3 before current
+        
         const response = await fetch('/api/v1/response', {
             method: 'POST',
             headers: {
@@ -99,7 +104,7 @@ async function sendMessage() {
             body: JSON.stringify({
                 prompt: prompt,
                 model: selectedModel,
-                context: currentChat.context
+                context: contextMessages
             })
         });
         
@@ -109,11 +114,9 @@ async function sendMessage() {
             removeLoading(loadingId);
             addMessage('assistant', data.response);
             
-            currentChat.messageCount++;
-            
-            // Every 5 messages, compact the conversation
-            if (currentChat.messageCount >= 5) {
-                await compactConversation();
+            // If this was the first message, generate a title
+            if (isFirstMessage) {
+                await generateChatTitle(prompt, selectedModel);
             }
             
             saveCurrentChat();
@@ -131,28 +134,38 @@ async function sendMessage() {
     updateSendButton();
 }
 
-// Compact conversation history
-async function compactConversation() {
+// Generate chat title from first message
+async function generateChatTitle(firstPrompt, model) {
     try {
-        const response = await fetch('/api/v1/compact', {
+        const response = await fetch('/api/v1/response', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                messages: currentChat.messages
+                prompt: `Generate a short, concise title (maximum 6 words) for a conversation that starts with this user question: "${firstPrompt}". Only respond with the title, nothing else.`,
+                model: model,
+                context: []
             })
         });
         
         const data = await response.json();
         
         if (response.ok) {
-            currentChat.context = data.summary;
-            currentChat.messageCount = 0;
-            console.log('Conversation compacted successfully');
+            // Clean up the title (remove quotes, trim, limit length)
+            let title = data.response.trim().replace(/^["']|["']$/g, '');
+            if (title.length > 50) {
+                title = title.substring(0, 50) + '...';
+            }
+            currentChat.title = title;
+            saveCurrentChat();
+            renderPreviousChats();
+            console.log('Chat title generated:', title);
         }
     } catch (error) {
-        console.error('Error compacting conversation:', error);
+        console.error('Error generating chat title:', error);
+        // Fallback to using first prompt as title
+        currentChat.title = firstPrompt.substring(0, 50) + (firstPrompt.length > 50 ? '...' : '');
     }
 }
 
@@ -232,8 +245,7 @@ function createNewChat() {
     currentChat = {
         id: Date.now(),
         messages: [],
-        context: '',
-        messageCount: 0,
+        title: null,
         model: modelSelect.value,
         timestamp: new Date().toISOString()
     };
