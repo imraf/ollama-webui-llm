@@ -1,0 +1,408 @@
+// State management
+let currentChat = {
+    id: null,
+    messages: [],
+    context: '',
+    messageCount: 0
+};
+
+let chats = [];
+let availableModels = [];
+let isLoading = false;
+
+// DOM elements
+const chatContainer = document.getElementById('chat-container');
+const userInput = document.getElementById('user-input');
+const sendBtn = document.getElementById('send-btn');
+const modelSelect = document.getElementById('model-select');
+const newChatBtn = document.getElementById('new-chat-btn');
+const previousChatsContainer = document.getElementById('previous-chats');
+
+// Initialize the app
+async function init() {
+    loadChatsFromStorage();
+    await loadModels();
+    setupEventListeners();
+    renderPreviousChats();
+}
+
+// Load available models from the API
+async function loadModels() {
+    try {
+        const response = await fetch('/api/v1/models');
+        const data = await response.json();
+        
+        if (data.models && data.models.length > 0) {
+            availableModels = data.models;
+            modelSelect.innerHTML = '';
+            
+            data.models.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model;
+                option.textContent = model;
+                modelSelect.appendChild(option);
+            });
+            
+            // Select first model by default
+            if (!currentChat.id) {
+                modelSelect.value = data.models[0];
+            }
+        } else {
+            modelSelect.innerHTML = '<option value="">No models available</option>';
+        }
+    } catch (error) {
+        console.error('Error loading models:', error);
+        modelSelect.innerHTML = '<option value="">Error loading models</option>';
+    }
+}
+
+// Setup event listeners
+function setupEventListeners() {
+    sendBtn.addEventListener('click', sendMessage);
+    userInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+    newChatBtn.addEventListener('click', createNewChat);
+}
+
+// Send message to the API
+async function sendMessage() {
+    const prompt = userInput.value.trim();
+    const selectedModel = modelSelect.value;
+    
+    if (!prompt || !selectedModel || isLoading) return;
+    
+    // Clear welcome message if it exists
+    const welcomeMessage = chatContainer.querySelector('.welcome-message');
+    if (welcomeMessage) {
+        welcomeMessage.remove();
+    }
+    
+    // Add user message to chat
+    addMessage('user', prompt);
+    userInput.value = '';
+    isLoading = true;
+    updateSendButton();
+    
+    // Show loading indicator
+    const loadingId = showLoading();
+    
+    try {
+        const response = await fetch('/api/v1/response', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                prompt: prompt,
+                model: selectedModel,
+                context: currentChat.context
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            removeLoading(loadingId);
+            addMessage('assistant', data.response);
+            
+            currentChat.messageCount++;
+            
+            // Every 5 messages, compact the conversation
+            if (currentChat.messageCount >= 5) {
+                await compactConversation();
+            }
+            
+            saveCurrentChat();
+        } else {
+            removeLoading(loadingId);
+            addMessage('assistant', `Error: ${data.error || 'Unknown error occurred'}`);
+        }
+    } catch (error) {
+        removeLoading(loadingId);
+        addMessage('assistant', `Error: ${error.message}`);
+        console.error('Error sending message:', error);
+    }
+    
+    isLoading = false;
+    updateSendButton();
+}
+
+// Compact conversation history
+async function compactConversation() {
+    try {
+        const response = await fetch('/api/v1/compact', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                messages: currentChat.messages
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            currentChat.context = data.summary;
+            currentChat.messageCount = 0;
+            console.log('Conversation compacted successfully');
+        }
+    } catch (error) {
+        console.error('Error compacting conversation:', error);
+    }
+}
+
+// Add message to the chat
+function addMessage(role, content) {
+    const message = { role, content };
+    currentChat.messages.push(message);
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${role}`;
+    
+    const header = document.createElement('div');
+    header.className = 'message-header';
+    header.textContent = role === 'user' ? 'You' : 'Assistant';
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'message-content';
+    
+    if (role === 'assistant') {
+        // Render markdown for assistant messages
+        contentDiv.innerHTML = marked.parse(content);
+    } else {
+        contentDiv.textContent = content;
+    }
+    
+    messageDiv.appendChild(header);
+    messageDiv.appendChild(contentDiv);
+    chatContainer.appendChild(messageDiv);
+    
+    scrollToBottom();
+}
+
+// Show loading indicator
+function showLoading() {
+    const loadingId = 'loading-' + Date.now();
+    const loadingDiv = document.createElement('div');
+    loadingDiv.id = loadingId;
+    loadingDiv.className = 'loading-indicator';
+    loadingDiv.innerHTML = `
+        <div class="loading-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <span>Thinking...</span>
+    `;
+    chatContainer.appendChild(loadingDiv);
+    scrollToBottom();
+    return loadingId;
+}
+
+// Remove loading indicator
+function removeLoading(loadingId) {
+    const loadingDiv = document.getElementById(loadingId);
+    if (loadingDiv) {
+        loadingDiv.remove();
+    }
+}
+
+// Update send button state
+function updateSendButton() {
+    sendBtn.disabled = isLoading;
+    sendBtn.textContent = isLoading ? 'Sending...' : 'Send';
+}
+
+// Scroll chat to bottom
+function scrollToBottom() {
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+// Create new chat
+function createNewChat() {
+    if (currentChat.messages.length > 0) {
+        saveCurrentChat();
+    }
+    
+    currentChat = {
+        id: Date.now(),
+        messages: [],
+        context: '',
+        messageCount: 0,
+        model: modelSelect.value,
+        timestamp: new Date().toISOString()
+    };
+    
+    chatContainer.innerHTML = `
+        <div class="welcome-message">
+            <h1>New Chat</h1>
+            <p>Start a conversation!</p>
+        </div>
+    `;
+    
+    renderPreviousChats();
+}
+
+// Save current chat
+function saveCurrentChat() {
+    if (!currentChat.id) {
+        currentChat.id = Date.now();
+        currentChat.timestamp = new Date().toISOString();
+        currentChat.model = modelSelect.value;
+    }
+    
+    if (currentChat.messages.length === 0) return;
+    
+    // Generate title from first user message
+    if (!currentChat.title) {
+        const firstUserMessage = currentChat.messages.find(m => m.role === 'user');
+        currentChat.title = firstUserMessage 
+            ? firstUserMessage.content.substring(0, 50) + (firstUserMessage.content.length > 50 ? '...' : '')
+            : 'Untitled Chat';
+    }
+    
+    // Update or add chat to the list
+    const existingIndex = chats.findIndex(c => c.id === currentChat.id);
+    if (existingIndex !== -1) {
+        chats[existingIndex] = { ...currentChat };
+    } else {
+        chats.unshift({ ...currentChat });
+    }
+    
+    // Keep only last 50 chats
+    if (chats.length > 50) {
+        chats = chats.slice(0, 50);
+    }
+    
+    saveChatsToStorage();
+    renderPreviousChats();
+}
+
+// Load chat from history
+function loadChat(chatId) {
+    if (currentChat.messages.length > 0 && currentChat.id !== chatId) {
+        saveCurrentChat();
+    }
+    
+    const chat = chats.find(c => c.id === chatId);
+    if (!chat) return;
+    
+    currentChat = { ...chat };
+    
+    // Clear chat container
+    chatContainer.innerHTML = '';
+    
+    // Render all messages
+    currentChat.messages.forEach(msg => {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${msg.role}`;
+        
+        const header = document.createElement('div');
+        header.className = 'message-header';
+        header.textContent = msg.role === 'user' ? 'You' : 'Assistant';
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+        
+        if (msg.role === 'assistant') {
+            contentDiv.innerHTML = marked.parse(msg.content);
+        } else {
+            contentDiv.textContent = msg.content;
+        }
+        
+        messageDiv.appendChild(header);
+        messageDiv.appendChild(contentDiv);
+        chatContainer.appendChild(messageDiv);
+    });
+    
+    // Set model if available
+    if (chat.model && availableModels.includes(chat.model)) {
+        modelSelect.value = chat.model;
+    }
+    
+    scrollToBottom();
+    renderPreviousChats();
+}
+
+// Delete chat
+function deleteChat(chatId, event) {
+    event.stopPropagation();
+    
+    if (confirm('Are you sure you want to delete this chat?')) {
+        chats = chats.filter(c => c.id !== chatId);
+        saveChatsToStorage();
+        
+        if (currentChat.id === chatId) {
+            createNewChat();
+        } else {
+            renderPreviousChats();
+        }
+    }
+}
+
+// Render previous chats list
+function renderPreviousChats() {
+    previousChatsContainer.innerHTML = '';
+    
+    if (chats.length === 0) {
+        previousChatsContainer.innerHTML = '<p style="color: #666; font-size: 13px; padding: 10px;">No previous chats</p>';
+        return;
+    }
+    
+    chats.forEach(chat => {
+        const chatItem = document.createElement('div');
+        chatItem.className = 'chat-item';
+        if (chat.id === currentChat.id) {
+            chatItem.classList.add('active');
+        }
+        
+        const title = document.createElement('div');
+        title.className = 'chat-item-title';
+        title.textContent = chat.title || 'Untitled Chat';
+        
+        const preview = document.createElement('div');
+        preview.className = 'chat-item-preview';
+        const lastMessage = chat.messages[chat.messages.length - 1];
+        preview.textContent = lastMessage ? lastMessage.content.substring(0, 60) + '...' : 'Empty chat';
+        
+        chatItem.appendChild(title);
+        chatItem.appendChild(preview);
+        
+        chatItem.addEventListener('click', () => loadChat(chat.id));
+        
+        previousChatsContainer.appendChild(chatItem);
+    });
+}
+
+// Local storage functions
+function saveChatsToStorage() {
+    try {
+        localStorage.setItem('llm-chats', JSON.stringify(chats));
+    } catch (error) {
+        console.error('Error saving to localStorage:', error);
+    }
+}
+
+function loadChatsFromStorage() {
+    try {
+        const stored = localStorage.getItem('llm-chats');
+        if (stored) {
+            chats = JSON.parse(stored);
+        }
+    } catch (error) {
+        console.error('Error loading from localStorage:', error);
+        chats = [];
+    }
+}
+
+// Initialize app when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
