@@ -48,11 +48,25 @@ A clean, mobile-inspired chat UI to interact with models served by [Ollama](http
 | 🪄 Zero Build | No bundlers, transpilers, or Node dependencies |
 | 📱 Responsive | Feels like a compact mobile chat on wider screens |
 
-### Interface Previews
+### Chat Flow
+The core experience: a clean conversation stream showing your prompts and the model's markdown-formatted replies. Messages auto-scroll, code blocks, lists, and tables render seamlessly for readability.
 
-| Chat Flow | Model Select | Context Handling | Previous Chats |
-|-----------|--------------|------------------|----------------|
-| ![Chat](readme-media/anim-chat-main.gif) | ![Model Select](readme-media/anim-model-select.gif) | ![Context](readme-media/anim-chat-context.gif) | ![History](readme-media/anim-previous-chats.gif) |
+![Chat Flow](readme-media/anim-chat-main.gif)
+
+### Model Selection
+Choose any locally available Ollama model on the fly. The dropdown is populated from the `/api/v1/models` endpoint so newly pulled models appear after a refresh. Switching models immediately affects subsequent prompts—no restart required.
+
+![Model Selection](readme-media/anim-model-select.gif)
+
+### Conversation Context
+Each new prompt sends the last three prior messages (user/assistant) to preserve short-term conversational grounding. This keeps responses relevant without heavy memory or manual summarization.
+
+![Conversation Context](readme-media/anim-chat-context.gif)
+
+### Previous Chats
+Every conversation is stored locally in your browser. Start a new chat to archive the current one, then revisit any past session instantly. Titles are auto-generated from the initial prompt for quick scanning.
+
+![Previous Chats](readme-media/anim-previous-chats.gif)
 
 ---
 
