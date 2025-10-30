@@ -21,11 +21,12 @@
 5. [Quick Start](#quick-start)  
 6. [Usage](#usage)  
 7. [Configuration](#configuration)  
-8. [API](#api-endpoints)  
-9. [Project Structure](#project-structure)  
-10. [Troubleshooting](#troubleshooting)  
-11. [Roadmap](#roadmap)  
-12. [License](#license)
+8. [Testing](#testing)  
+9. [API](#api-endpoints)  
+10. [Project Structure](#project-structure)  
+11. [Troubleshooting](#troubleshooting)  
+12. [Roadmap](#roadmap)  
+13. [License](#license)
 
 ---
 
@@ -136,6 +137,52 @@ Ollama host (implicit): `http://localhost:11434`
 
 ---
 
+## Testing
+
+The project includes comprehensive unit tests using pytest. All tests mock the Ollama library, so no running Ollama instance is required.
+
+### Install Test Dependencies
+
+**With uv:**
+```bash
+uv sync --extra dev
+```
+
+**With pip:**
+```bash
+pip install pytest pytest-mock pytest-cov
+```
+
+### Run Tests
+
+```bash
+# Run all tests
+pytest tests/test_server.py -v
+
+# Run with coverage
+pytest tests/test_server.py --cov=server --cov-report=html
+```
+
+### Test Coverage
+
+The test suite includes **30+ test cases** covering:
+
+- **Index Route**: HTML file serving
+- **Response Endpoint** (`/api/v1/response`):
+  - Valid requests with/without context
+  - Input validation (missing fields, empty values)
+  - Error handling (Ollama errors, general exceptions)
+  - Edge cases (long prompts, special characters, unicode)
+  - Invalid JSON and HTTP method restrictions
+- **Models Endpoint** (`/api/v1/models`):
+  - Successful model retrieval
+  - Empty model lists
+  - Error handling scenarios
+- **Server Configuration**: Environment variables and constants
+- **Edge Cases**: Boundary conditions and error paths
+
+---
+
 ## API Endpoints
 
 ### POST /api/v1/response
@@ -174,6 +221,10 @@ Response:
 ```
 ollama-webui-llm/
 ├── server.py                # Flask server & endpoints
+├── tests/
+│   ├── __init__.py
+│   ├── conftest.py          # Shared pytest fixtures
+│   └── test_server.py       # Comprehensive unit tests
 ├── static/
 │   ├── index.html           # UI layout
 │   ├── style.css            # Minimal styling

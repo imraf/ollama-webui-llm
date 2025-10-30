@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, send_from_directory
+from werkzeug.exceptions import BadRequest
 import ollama
 import os
 
@@ -69,6 +70,8 @@ def get_response():
             "model": model
         }), 200
         
+    except BadRequest:
+        return jsonify({"error": "Invalid JSON data provided"}), 400
     except ollama.ResponseError as e:
         return jsonify({"error": f"Ollama error: {str(e)}"}), 500
     except Exception as e:
