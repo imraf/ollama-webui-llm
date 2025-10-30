@@ -196,19 +196,6 @@ Get a list of available Ollama models.
 }
 ```
 
-### `POST /api/v1/compact`
-Summarize a conversation (requires granite3.3:2b model).
-
-**Request body:**
-```json
-{
-  "messages": [
-    {"role": "user", "content": "Message 1"},
-    {"role": "assistant", "content": "Response 1"}
-  ]
-}
-```
-
 **Response:**
 ```json
 {
