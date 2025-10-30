@@ -1,246 +1,205 @@
 # LLM Chatbot Web UI
 
-A minimalistic, lightweight web interface for chatting with local LLM models via Ollama. Built with Python and Flask for extremely easy setup without requiring Node.js or complex build tools.
+> Minimal, Python-only chat interface for local Ollama models. No Node.js. No build tooling. Just Flask + vanilla JS.
 
-![Screenshot](readme-media/screenshot.jpg)
+![Screenshot of UI](readme-media/screenshot.jpg)
+
+<p align="center">
+  <a href="https://www.python.org"><img src="https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white" /></a>
+  <a href="https://flask.palletsprojects.com"><img src="https://img.shields.io/badge/Flask-Lightweight-000000?style=for-the-badge&logo=flask&logoColor=white" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" /></a>
+  <img src="https://img.shields.io/badge/No%20Node.js-✔-blue?style=for-the-badge" />
+</p>
+
+---
+
+## Table of Contents
+1. [Overview](#overview)  
+2. [Features](#features)  
+3. [Prerequisites](#prerequisites)  
+4. [Installation](#installation)  
+5. [Quick Start](#quick-start)  
+6. [Usage](#usage)  
+7. [Configuration](#configuration)  
+8. [API](#api-endpoints)  
+9. [Project Structure](#project-structure)  
+10. [Troubleshooting](#troubleshooting)  
+11. [Roadmap](#roadmap)  
+12. [License](#license)
+
+---
 
 ## Overview
+A clean, mobile-inspired chat UI to interact with models served by [Ollama](https://ollama.ai/). It focuses on frictionless setup: clone, install Python deps, run Flask, chat.
 
-This project provides a clean, mobile-inspired chat interface for interacting with your local Ollama models. The entire application is built with pure Python (Flask backend) and vanilla JavaScript (frontend), making it incredibly simple to set up and run. No npm, webpack, or other JavaScript build tools required!
+---
 
 ## Features
 
-### 🤖 **Chat with Local Models**
-Interact with any Ollama model installed on your system through a clean, intuitive chat interface.
+| Category | Description |
+|----------|-------------|
+| 💬 Chat Interface | Simple two-column layout with markdown-rendered model replies |
+| 🤖 Local Models | Uses any model already pulled into your Ollama install |
+| 🎯 Model Picker | Dynamic dropdown of locally available models |
+| 🔁 Context | Sends last 3 messages each turn for coherent multi-turn dialogue |
+| 📝 Auto Titles | First user prompt triggers a lightweight title generation request |
+| 📚 History | Chats persisted in browser localStorage; reload and revisit anytime |
+| 🧾 Markdown | Supports code blocks, tables, lists via client-side rendering |
+| 🪄 Zero Build | No bundlers, transpilers, or Node dependencies |
+| 📱 Responsive | Feels like a compact mobile chat on wider screens |
 
-![Chat Interface](readme-media/anim-chat-main.gif)
+### Interface Previews
 
-### 🎯 **Model Selection**
-Easily switch between different models with a dropdown selector that automatically populates with your available Ollama models.
+| Chat Flow | Model Select | Context Handling | Previous Chats |
+|-----------|--------------|------------------|----------------|
+| ![Chat](readme-media/anim-chat-main.gif) | ![Model Select](readme-media/anim-model-select.gif) | ![Context](readme-media/anim-chat-context.gif) | ![History](readme-media/anim-previous-chats.gif) |
 
-![Model Selection](readme-media/anim-model-select.gif)
-
-### 💬 **Contextual Conversations**
-The chatbot maintains conversation context by sending the last 3 messages with each new prompt, enabling coherent multi-turn conversations.
-
-![Chat Context](readme-media/anim-chat-context.gif)
-
-### 📚 **Chat History**
-Save and load previous conversations. All chats are stored in your browser's local storage and can be accessed anytime.
-
-![Previous Chats](readme-media/anim-previous-chats.gif)
-
-### ✨ **Additional Features**
-- **Auto-generated Titles**: Conversations are automatically titled based on the first message
-- **Markdown Support**: Responses are rendered with full markdown support including code blocks, tables, and lists
-- **Clean UI**: Minimalistic design inspired by modern chat applications
-- **Responsive Layout**: Adapts to both desktop and mobile screens
-- **No Database Required**: Uses browser local storage for chat history
+---
 
 ## Prerequisites
+- Python 3.12+  
+- Ollama installed & running (`ollama serve`)  
+- At least one model pulled (e.g. `ollama pull llama2`)  
+- Optional: [uv](https://github.com/astral-sh/uv) for fast dependency management  
 
-- **Python 3.12+** (recommended)
-- **Ollama** installed and running on your system
-- **uv** (Python package manager) - optional but recommended
+Install Ollama: https://ollama.ai/download
+
+---
 
 ## Installation
 
-### Installing Ollama
-
-If you haven't installed Ollama yet, follow the official installation guide:
-
-👉 [Ollama Installation Documentation](https://ollama.ai/download)
-
-After installation, make sure Ollama is running:
+### Option A: uv (Recommended)
 ```bash
-ollama serve
+curl -LsSf https://astral.sh/uv/install.sh | sh        # macOS/Linux
+# Windows (PowerShell):
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+git clone <repository-url>
+cd ollama-webui-llm
+uv sync
+uv run python server.py
 ```
 
-You should also have at least one model installed. For example:
+### Option B: pip / venv
 ```bash
-ollama pull llama2
-ollama pull granite3.3:2b
+git clone <repository-url>
+cd ollama-webui-llm
+
+python3 -m venv venv
+source venv/bin/activate            # macOS/Linux
+# venv\Scripts\activate             # Windows
+
+pip install -r requirements.txt
+python server.py
 ```
 
-### Setting Up the Project
+---
 
-#### **Option 1: Using uv (Recommended)**
+## Quick Start
+1. Pull a model: `ollama pull llama2`
+2. Run Ollama: `ollama serve` (if not auto-started)
+3. Start web UI: `python server.py`
+4. Visit: http://localhost:5000
 
-1. **Install uv** if you haven't already:
-   ```bash
-   # On macOS and Linux
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-   
-   # On Windows (PowerShell)
-   powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
-   ```
-
-2. **Clone or download this repository**:
-   ```bash
-   git clone <repository-url>
-   cd ollama-webui-llm
-   ```
-
-3. **Install dependencies**:
-   ```bash
-   uv sync
-   ```
-
-4. **Run the server**:
-   ```bash
-   uv run python server.py
-   ```
-
-#### **Option 2: Using pip**
-
-1. **Clone or download this repository**:
-   ```bash
-   git clone <repository-url>
-   cd ollama-webui-llm
-   ```
-
-2. **Create a virtual environment** (optional but recommended):
-   ```bash
-   # On macOS/Linux
-   python3 -m venv venv
-   source venv/bin/activate
-   
-   # On Windows
-   python -m venv venv
-   venv\Scripts\activate
-   ```
-
-3. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   # Or if using pyproject.toml:
-   pip install -e .
-   ```
-
-4. **Run the server**:
-   ```bash
-   python server.py
-   ```
+---
 
 ## Usage
+1. Select a model in the left sidebar.
+2. Type a prompt and send.
+3. First prompt also triggers an automatic title request.
+4. Click “New Chat” to archive the current conversation.
+5. Load any previous chat from the history list.
 
-1. **Start the server** (if not already running):
-   ```bash
-   # With uv
-   uv run python server.py
-   
-   # Or with standard Python
-   python server.py
-   ```
-
-2. **Open your browser** and navigate to:
-   ```
-   http://localhost:5000
-   ```
-
-3. **Select a model** from the dropdown in the left sidebar
-
-4. **Start chatting!** Type your message and press Enter or click Send
+---
 
 ## Configuration
+Environment variables:
+```bash
+PORT=8080 python server.py     # Change port
+DEBUG=False python server.py   # Disable debug
+```
+Ollama host (implicit): `http://localhost:11434`
 
-The server can be configured using environment variables:
-
-- `PORT`: Server port (default: 5000)
-  ```bash
-  PORT=8080 python server.py
-  ```
-
-- `DEBUG`: Enable/disable debug mode (default: True)
-  ```bash
-  DEBUG=False python server.py
-  ```
-
-- Ollama is expected to run on `http://localhost:11434` (default Ollama port)
+---
 
 ## API Endpoints
 
-The application exposes the following REST API endpoints:
-
-### `POST /api/v1/response`
-Send a prompt to an Ollama model and receive a response.
-
-**Request body:**
+### POST /api/v1/response
+Send a prompt with optional short context (last 3 messages).
 ```json
 {
-  "prompt": "Your question here",
+  "prompt": "Explain attention mechanisms.",
   "model": "llama2",
   "context": [
-    {"role": "user", "content": "Previous message"},
-    {"role": "assistant", "content": "Previous response"}
+    {"role": "user", "content": "Hi"},
+    {"role": "assistant", "content": "Hello! How can I help?"}
   ]
 }
 ```
-
-**Response:**
+Response:
 ```json
 {
-  "response": "Model's response",
+  "response": "Detailed explanation...",
   "model": "llama2"
 }
 ```
 
-### `GET /api/v1/models`
-Get a list of available Ollama models.
-
-**Response:**
+### GET /api/v1/models
+List models available locally.
+Response:
 ```json
 {
-  "models": ["llama2", "granite3.3:2b", "..."],
+  "models": ["llama2", "granite3.3:2b"],
   "count": 2
 }
 ```
 
-**Response:**
-```json
-{
-  "summary": "Conversation summary",
-  "model": "granite3.3:2b"
-}
-```
+---
 
 ## Project Structure
-
 ```
 ollama-webui-llm/
-├── server.py              # Flask backend server
+├── server.py                # Flask server & endpoints
 ├── static/
-│   ├── index.html        # Main HTML page
-│   ├── style.css         # Stylesheet
-│   └── app.js            # Frontend JavaScript
-├── pyproject.toml        # Python project configuration
-└── README.md             # This file
+│   ├── index.html           # UI layout
+│   ├── style.css            # Minimal styling
+│   └── app.js               # Client logic (chat, models, storage)
+├── readme-media/            # Screenshots & animated GIFs
+├── LICENSE                  # MIT License
+└── README.md                # Documentation
 ```
+
+---
 
 ## Troubleshooting
 
-### Ollama Connection Issues
-- Ensure Ollama is running: `ollama serve`
-- Check that Ollama is accessible at `http://localhost:11434`
-- Verify you have models installed: `ollama list`
+| Issue | Checks |
+|-------|--------|
+| Empty model list | `ollama list` — ensure models pulled |
+| Connection errors | Is `ollama serve` running? Port 11434 reachable? |
+| 404 static files | Run from project root; Flask static folder intact |
+| Port conflict | Change with `PORT=7000 python server.py` |
 
-### No Models Available
-- Install a model: `ollama pull llama2`
-- Restart the server after installing new models
+---
 
-### Port Already in Use
-- Change the port: `PORT=8080 python server.py`
-- Or stop the process using port 5000
+## Roadmap
+- [ ] Streaming responses  
+- [ ] Export chat as JSON/Markdown  
+- [ ] Optional system prompt injection  
+- [ ] Simple theming (dark/light toggle)  
+
+---
 
 ## License
+MIT License. See [LICENSE](LICENSE).
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+---
 
 ## Acknowledgments
+- Flask for backend simplicity  
+- Ollama for local model serving  
 
-- Built with [Flask](https://flask.palletsprojects.com/)
-- Powered by [Ollama](https://ollama.ai/)
+---
+
+### Tags
+ollama llm chatbot flask python ai chat-ui local-llm
