@@ -88,7 +88,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh        # macOS/Linux
 # Windows (PowerShell):
 powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 
-git clone <repository-url>
+git clone https://github.com/imraf/ollama-webui-llm.git
 cd ollama-webui-llm
 uv sync
 uv run python server.py
@@ -96,7 +96,7 @@ uv run python server.py
 
 ### Option B: pip / venv
 ```bash
-git clone <repository-url>
+git clone https://github.com/imraf/ollama-webui-llm.git
 cd ollama-webui-llm
 
 python3 -m venv venv
