@@ -31,6 +31,13 @@ async function loadModels() {
         const response = await fetch('/api/v1/models');
         const data = await response.json();
         
+        if (data.error) {
+            showOllamaError(data.error);
+            modelSelect.innerHTML = '<option value="">Ollama not available</option>';
+            disableChatInterface();
+            return false;
+        }
+        
         if (data.models && data.models.length > 0) {
             availableModels = data.models;
             modelSelect.innerHTML = '';
@@ -46,12 +53,20 @@ async function loadModels() {
             if (!currentChat.id) {
                 modelSelect.value = data.models[0];
             }
+            enableChatInterface();
+            return true;
         } else {
             modelSelect.innerHTML = '<option value="">No models available</option>';
+            showNoModelsError();
+            disableChatInterface();
+            return false;
         }
     } catch (error) {
         console.error('Error loading models:', error);
         modelSelect.innerHTML = '<option value="">Error loading models</option>';
+        showOllamaError('Failed to connect to server');
+        disableChatInterface();
+        return false;
     }
 }
 
@@ -410,6 +425,102 @@ function loadChatsFromStorage() {
         console.error('Error loading from localStorage:', error);
         chats = [];
     }
+}
+
+// Show Ollama error page
+function showOllamaError(errorMessage) {
+    chatContainer.innerHTML = `
+        <div class="error-page">
+            <div class="error-icon">⚠️</div>
+            <h1>Ollama Not Available</h1>
+            <p class="error-message">${errorMessage || 'Failed to connect to Ollama'}</p>
+            <div class="error-instructions">
+                <h3>To fix this:</h3>
+                <ol>
+                    <li>Make sure Ollama is installed. If not, download it from <a href="https://ollama.com/download" target="_blank">ollama.com/download</a></li>
+                    <li>Start Ollama by running: <code>ollama serve</code></li>
+                    <li>Or if using the desktop app, make sure it's running</li>
+                    <li>Click the retry button below once Ollama is running</li>
+                </ol>
+            </div>
+            <button id="retry-connection-btn" class="retry-btn">🔄 Retry Connection</button>
+        </div>
+    `;
+    
+    const retryBtn = document.getElementById('retry-connection-btn');
+    if (retryBtn) {
+        retryBtn.addEventListener('click', async () => {
+            retryBtn.textContent = 'Connecting...';
+            retryBtn.disabled = true;
+            const success = await loadModels();
+            if (success) {
+                chatContainer.innerHTML = `
+                    <div class="welcome-message">
+                        <h1>Welcome to LLM Chat</h1>
+                        <p>Select a model and start chatting!</p>
+                    </div>
+                `;
+            } else {
+                retryBtn.textContent = '🔄 Retry Connection';
+                retryBtn.disabled = false;
+            }
+        });
+    }
+}
+
+// Show no models error
+function showNoModelsError() {
+    chatContainer.innerHTML = `
+        <div class="error-page">
+            <div class="error-icon">📦</div>
+            <h1>No Models Available</h1>
+            <p class="error-message">Ollama is running, but no models are installed.</p>
+            <div class="error-instructions">
+                <h3>To install a model:</h3>
+                <ol>
+                    <li>Open a terminal</li>
+                    <li>Run: <code>ollama pull llama2</code></li>
+                    <li>Or choose another model from <a href="https://ollama.com/library" target="_blank">ollama.com/library</a></li>
+                    <li>Click the retry button below once a model is installed</li>
+                </ol>
+            </div>
+            <button id="retry-connection-btn" class="retry-btn">🔄 Retry Connection</button>
+        </div>
+    `;
+    
+    const retryBtn = document.getElementById('retry-connection-btn');
+    if (retryBtn) {
+        retryBtn.addEventListener('click', async () => {
+            retryBtn.textContent = 'Checking...';
+            retryBtn.disabled = true;
+            const success = await loadModels();
+            if (success) {
+                chatContainer.innerHTML = `
+                    <div class="welcome-message">
+                        <h1>Welcome to LLM Chat</h1>
+                        <p>Select a model and start chatting!</p>
+                    </div>
+                `;
+            } else {
+                retryBtn.textContent = '🔄 Retry Connection';
+                retryBtn.disabled = false;
+            }
+        });
+    }
+}
+
+// Disable chat interface
+function disableChatInterface() {
+    userInput.disabled = true;
+    sendBtn.disabled = true;
+    userInput.placeholder = 'Chat unavailable - Ollama not connected';
+}
+
+// Enable chat interface
+function enableChatInterface() {
+    userInput.disabled = false;
+    sendBtn.disabled = false;
+    userInput.placeholder = 'Type your message here...';
 }
 
 // Initialize app when DOM is ready
