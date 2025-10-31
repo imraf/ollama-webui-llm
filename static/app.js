@@ -8,6 +8,10 @@ let currentChat = {
 let chats = [];
 let availableModels = [];
 let isLoading = false;
+let apiKey = null;
+
+// API Key storage key
+const API_KEY_STORAGE_KEY = 'llm-api-key';
 
 // DOM elements
 const chatContainer = document.getElementById('chat-container');
@@ -16,19 +20,148 @@ const sendBtn = document.getElementById('send-btn');
 const modelSelect = document.getElementById('model-select');
 const newChatBtn = document.getElementById('new-chat-btn');
 const previousChatsContainer = document.getElementById('previous-chats');
+const loginContainer = document.getElementById('login-container');
+const mainContainer = document.getElementById('main-container');
+const loginForm = document.getElementById('login-form');
+const apiKeyInput = document.getElementById('api-key-input');
+const loginError = document.getElementById('login-error');
+const loginSubmitBtn = document.getElementById('login-submit-btn');
 
 // Initialize the app
 async function init() {
-    loadChatsFromStorage();
-    await loadModels();
-    setupEventListeners();
-    renderPreviousChats();
+    // Check for stored API key
+    apiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
+    
+    if (apiKey) {
+        // Validate stored API key
+        const isValid = await validateApiKey(apiKey);
+        if (isValid) {
+            showMainInterface();
+            loadChatsFromStorage();
+            await loadModels();
+            setupEventListeners();
+            renderPreviousChats();
+        } else {
+            // Invalid key, clear it and show login
+            clearApiKey();
+            showLoginForm();
+        }
+    } else {
+        // No API key, show login form
+        showLoginForm();
+    }
+    
+    setupLoginListeners();
+}
+
+// Setup login form event listeners
+function setupLoginListeners() {
+    loginForm.addEventListener('submit', handleLogin);
+}
+
+// Show login form
+function showLoginForm() {
+    loginContainer.style.display = 'flex';
+    mainContainer.style.display = 'none';
+    apiKeyInput.focus();
+}
+
+// Show main interface
+function showMainInterface() {
+    loginContainer.style.display = 'none';
+    mainContainer.style.display = 'flex';
+}
+
+// Handle login form submission
+async function handleLogin(event) {
+    event.preventDefault();
+    
+    const key = apiKeyInput.value.trim();
+    if (!key) {
+        showLoginError('Please enter an API key');
+        return;
+    }
+    
+    loginSubmitBtn.disabled = true;
+    loginSubmitBtn.textContent = 'Connecting...';
+    hideLoginError();
+    
+    const isValid = await validateApiKey(key);
+    
+    if (isValid) {
+        apiKey = key;
+        localStorage.setItem(API_KEY_STORAGE_KEY, key);
+        showMainInterface();
+        loadChatsFromStorage();
+        await loadModels();
+        setupEventListeners();
+        renderPreviousChats();
+    } else {
+        showLoginError('Invalid API key. Please try again.');
+        loginSubmitBtn.disabled = false;
+        loginSubmitBtn.textContent = 'Connect';
+    }
+}
+
+// Validate API key by making a test request
+async function validateApiKey(key) {
+    try {
+        const response = await fetch('/api/v1/models', {
+            method: 'GET',
+            headers: {
+                'X-API-Key': key
+            }
+        });
+        
+        return response.status !== 401;
+    } catch (error) {
+        console.error('Error validating API key:', error);
+        return false;
+    }
+}
+
+// Clear API key
+function clearApiKey() {
+    apiKey = null;
+    localStorage.removeItem(API_KEY_STORAGE_KEY);
+}
+
+// Show login error
+function showLoginError(message) {
+    loginError.textContent = message;
+    loginError.style.display = 'block';
+}
+
+// Hide login error
+function hideLoginError() {
+    loginError.style.display = 'none';
+}
+
+// Get API headers for requests
+function getApiHeaders() {
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    
+    if (apiKey) {
+        headers['X-API-Key'] = apiKey;
+    }
+    
+    return headers;
 }
 
 // Load available models from the API
 async function loadModels() {
     try {
-        const response = await fetch('/api/v1/models');
+        const response = await fetch('/api/v1/models', {
+            headers: getApiHeaders()
+        });
+        
+        if (response.status === 401) {
+            handleUnauthorized();
+            return false;
+        }
+        
         const data = await response.json();
         
         if (data.error) {
@@ -68,6 +201,13 @@ async function loadModels() {
         disableChatInterface();
         return false;
     }
+}
+
+// Handle 401 unauthorized responses
+function handleUnauthorized() {
+    clearApiKey();
+    showLoginForm();
+    showLoginError('Session expired. Please enter your API key again.');
 }
 
 // Setup event listeners
@@ -113,15 +253,21 @@ async function sendMessage() {
         
         const response = await fetch('/api/v1/response', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: getApiHeaders(),
             body: JSON.stringify({
                 prompt: prompt,
                 model: selectedModel,
                 context: contextMessages
             })
         });
+        
+        if (response.status === 401) {
+            handleUnauthorized();
+            removeLoading(loadingId);
+            isLoading = false;
+            updateSendButton();
+            return;
+        }
         
         const data = await response.json();
         
@@ -154,15 +300,18 @@ async function generateChatTitle(firstPrompt, model) {
     try {
         const response = await fetch('/api/v1/response', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: getApiHeaders(),
             body: JSON.stringify({
                 prompt: `Generate a short, concise title (maximum 6 words) for a conversation that starts with this user question: "${firstPrompt}". Only respond with the title, nothing else.`,
                 model: model,
                 context: []
             })
         });
+        
+        if (response.status === 401) {
+            handleUnauthorized();
+            return;
+        }
         
         const data = await response.json();
         

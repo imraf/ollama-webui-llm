@@ -3,6 +3,7 @@ Shared pytest fixtures and configuration for the test suite.
 """
 import pytest
 import ollama
+import os
 from unittest.mock import patch
 from server import app
 
@@ -37,4 +38,22 @@ def mock_ollama_response_error(monkeypatch):
     
     monkeypatch.setattr(ollama, 'ResponseError', MockResponseError)
     return MockResponseError
+
+
+@pytest.fixture
+def api_key(monkeypatch):
+    """Set API_KEY for tests by patching server.API_KEY directly."""
+    import server
+    test_api_key = 'test-api-key-123'
+    original_key = server.API_KEY
+    server.API_KEY = test_api_key
+    yield test_api_key
+    # Restore original API_KEY
+    server.API_KEY = original_key
+
+
+@pytest.fixture
+def api_headers(api_key):
+    """Return headers with API key for test requests."""
+    return {'X-API-Key': api_key}
 

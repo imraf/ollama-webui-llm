@@ -132,8 +132,24 @@ Environment variables:
 ```bash
 PORT=8080 python server.py     # Change port
 DEBUG=False python server.py   # Disable debug
+API_KEY=your-secret-key python server.py  # Set API key for authentication
 ```
 Ollama host (implicit): `http://localhost:11434`
+
+### API Key Authentication
+
+The application supports API key authentication to protect access to the chat interface:
+
+1. **Set an API key** by setting the `API_KEY` environment variable when starting the server:
+   ```bash
+   API_KEY=your-secret-key python server.py
+   ```
+
+2. **Access the web interface** - When you visit the application, you'll be prompted to enter the API key.
+
+3. **API key storage** - The API key is stored in your browser's localStorage and automatically sent with all API requests.
+
+4. **No API key** - If `API_KEY` is not set, the application works without authentication (backward compatible).
 
 ---
 
@@ -165,7 +181,7 @@ pytest tests/test_server.py --cov=server --cov-report=html
 
 ### Test Coverage
 
-The test suite includes **30+ test cases** covering:
+The test suite includes **40+ test cases** covering:
 
 - **Index Route**: HTML file serving
 - **Response Endpoint** (`/api/v1/response`):
@@ -178,6 +194,11 @@ The test suite includes **30+ test cases** covering:
   - Successful model retrieval
   - Empty model lists
   - Error handling scenarios
+- **API Key Authentication**:
+  - Missing API key handling
+  - Invalid API key handling
+  - Valid API key acceptance
+  - Backward compatibility (no API key set)
 - **Server Configuration**: Environment variables and constants
 - **Edge Cases**: Boundary conditions and error paths
 
@@ -185,8 +206,19 @@ The test suite includes **30+ test cases** covering:
 
 ## API Endpoints
 
+**Note:** If `API_KEY` is set, all API endpoints require the `X-API-Key` header:
+```
+X-API-Key: your-api-key
+```
+
 ### POST /api/v1/response
 Send a prompt with optional short context (last 3 messages).
+
+**Request Headers:**
+- `Content-Type: application/json`
+- `X-API-Key: your-api-key` (required if API_KEY is set)
+
+**Request Body:**
 ```json
 {
   "prompt": "Explain attention mechanisms.",
@@ -197,7 +229,8 @@ Send a prompt with optional short context (last 3 messages).
   ]
 }
 ```
-Response:
+
+**Response:**
 ```json
 {
   "response": "Detailed explanation...",
@@ -205,13 +238,31 @@ Response:
 }
 ```
 
+**Error Response (401):**
+```json
+{
+  "error": "Invalid or missing API key"
+}
+```
+
 ### GET /api/v1/models
 List models available locally.
-Response:
+
+**Request Headers:**
+- `X-API-Key: your-api-key` (required if API_KEY is set)
+
+**Response:**
 ```json
 {
   "models": ["llama2", "granite3.3:2b"],
   "count": 2
+}
+```
+
+**Error Response (401):**
+```json
+{
+  "error": "Invalid or missing API key"
 }
 ```
 

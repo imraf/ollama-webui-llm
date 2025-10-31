@@ -22,7 +22,7 @@ class TestIndexRoute:
 class TestResponseEndpoint:
     """Tests for the /api/v1/response endpoint."""
     
-    def test_valid_request_with_prompt_and_model(self, client, mock_ollama_chat):
+    def test_valid_request_with_prompt_and_model(self, client, mock_ollama_chat, api_headers):
         """Test successful response with valid prompt and model."""
         mock_ollama_chat.return_value = {
             'message': {
@@ -38,7 +38,8 @@ class TestResponseEndpoint:
         response = client.post(
             '/api/v1/response',
             data=json.dumps(data),
-            content_type='application/json'
+            content_type='application/json',
+            headers=api_headers
         )
         
         assert response.status_code == 200
@@ -52,7 +53,7 @@ class TestResponseEndpoint:
         assert call_args[1]['messages'][0]['role'] == 'user'
         assert call_args[1]['messages'][0]['content'] == 'Hello, how are you?'
     
-    def test_valid_request_with_context(self, client, mock_ollama_chat):
+    def test_valid_request_with_context(self, client, mock_ollama_chat, api_headers):
         """Test successful response with conversation context."""
         mock_ollama_chat.return_value = {
             'message': {
@@ -72,7 +73,8 @@ class TestResponseEndpoint:
         response = client.post(
             '/api/v1/response',
             data=json.dumps(data),
-            content_type='application/json'
+            content_type='application/json',
+            headers=api_headers
         )
         
         assert response.status_code == 200
@@ -89,7 +91,7 @@ class TestResponseEndpoint:
         assert messages[2]['role'] == 'user'
         assert messages[2]['content'] == 'Tell me more'
     
-    def test_context_with_missing_fields(self, client, mock_ollama_chat):
+    def test_context_with_missing_fields(self, client, mock_ollama_chat, api_headers):
         """Test context messages with missing role or content fields."""
         mock_ollama_chat.return_value = {
             'message': {
@@ -109,7 +111,8 @@ class TestResponseEndpoint:
         response = client.post(
             '/api/v1/response',
             data=json.dumps(data),
-            content_type='application/json'
+            content_type='application/json',
+            headers=api_headers
         )
         
         assert response.status_code == 200
@@ -121,7 +124,7 @@ class TestResponseEndpoint:
         assert messages[1]['role'] == 'user'  # Default role
         assert messages[1]['content'] == 'Hello'
     
-    def test_missing_prompt(self, client):
+    def test_missing_prompt(self, client, api_headers):
         """Test request without prompt field."""
         data = {
             'model': 'llama2'
@@ -130,7 +133,8 @@ class TestResponseEndpoint:
         response = client.post(
             '/api/v1/response',
             data=json.dumps(data),
-            content_type='application/json'
+            content_type='application/json',
+            headers=api_headers
         )
         
         assert response.status_code == 400
@@ -138,7 +142,7 @@ class TestResponseEndpoint:
         assert 'error' in json_data
         assert 'prompt' in json_data['error'].lower()
     
-    def test_empty_prompt(self, client):
+    def test_empty_prompt(self, client, api_headers):
         """Test request with empty prompt."""
         data = {
             'prompt': '',
@@ -148,14 +152,15 @@ class TestResponseEndpoint:
         response = client.post(
             '/api/v1/response',
             data=json.dumps(data),
-            content_type='application/json'
+            content_type='application/json',
+            headers=api_headers
         )
         
         assert response.status_code == 400
         json_data = json.loads(response.data)
         assert 'error' in json_data
     
-    def test_missing_model(self, client):
+    def test_missing_model(self, client, api_headers):
         """Test request without model field."""
         data = {
             'prompt': 'Hello'
@@ -164,7 +169,8 @@ class TestResponseEndpoint:
         response = client.post(
             '/api/v1/response',
             data=json.dumps(data),
-            content_type='application/json'
+            content_type='application/json',
+            headers=api_headers
         )
         
         assert response.status_code == 400
@@ -172,12 +178,13 @@ class TestResponseEndpoint:
         assert 'error' in json_data
         assert 'model' in json_data['error'].lower()
     
-    def test_no_json_data(self, client):
+    def test_no_json_data(self, client, api_headers):
         """Test request without JSON data."""
         response = client.post(
             '/api/v1/response',
             data='not json',
-            content_type='application/json'
+            content_type='application/json',
+            headers=api_headers
         )
         
         assert response.status_code == 400
@@ -185,17 +192,18 @@ class TestResponseEndpoint:
         assert 'error' in json_data
         assert 'json' in json_data['error'].lower()
     
-    def test_empty_json_body(self, client):
+    def test_empty_json_body(self, client, api_headers):
         """Test request with empty JSON body."""
         response = client.post(
             '/api/v1/response',
             data=json.dumps({}),
-            content_type='application/json'
+            content_type='application/json',
+            headers=api_headers
         )
         
         assert response.status_code == 400
     
-    def test_invalid_context_not_list(self, client, mock_ollama_chat):
+    def test_invalid_context_not_list(self, client, mock_ollama_chat, api_headers):
         """Test context that is not a list."""
         mock_ollama_chat.return_value = {
             'message': {
@@ -212,7 +220,8 @@ class TestResponseEndpoint:
         response = client.post(
             '/api/v1/response',
             data=json.dumps(data),
-            content_type='application/json'
+            content_type='application/json',
+            headers=api_headers
         )
         
         # Should still succeed, but context is ignored
@@ -221,7 +230,7 @@ class TestResponseEndpoint:
         messages = call_args[1]['messages']
         assert len(messages) == 1
     
-    def test_context_with_empty_list(self, client, mock_ollama_chat):
+    def test_context_with_empty_list(self, client, mock_ollama_chat, api_headers):
         """Test context with empty list."""
         mock_ollama_chat.return_value = {
             'message': {
@@ -238,7 +247,8 @@ class TestResponseEndpoint:
         response = client.post(
             '/api/v1/response',
             data=json.dumps(data),
-            content_type='application/json'
+            content_type='application/json',
+            headers=api_headers
         )
         
         assert response.status_code == 200
@@ -246,7 +256,7 @@ class TestResponseEndpoint:
         messages = call_args[1]['messages']
         assert len(messages) == 1
     
-    def test_ollama_response_error(self, client, mock_ollama_chat, mock_ollama_response_error):
+    def test_ollama_response_error(self, client, mock_ollama_chat, mock_ollama_response_error, api_headers):
         """Test handling of Ollama ResponseError."""
         mock_ollama_chat.side_effect = mock_ollama_response_error('Model not found')
         
@@ -258,7 +268,8 @@ class TestResponseEndpoint:
         response = client.post(
             '/api/v1/response',
             data=json.dumps(data),
-            content_type='application/json'
+            content_type='application/json',
+            headers=api_headers
         )
         
         assert response.status_code == 500
@@ -266,7 +277,7 @@ class TestResponseEndpoint:
         assert 'error' in json_data
         assert 'ollama' in json_data['error'].lower()
     
-    def test_general_exception(self, client, mock_ollama_chat):
+    def test_general_exception(self, client, mock_ollama_chat, api_headers):
         """Test handling of general exceptions."""
         mock_ollama_chat.side_effect = Exception('Unexpected error')
         
@@ -278,7 +289,8 @@ class TestResponseEndpoint:
         response = client.post(
             '/api/v1/response',
             data=json.dumps(data),
-            content_type='application/json'
+            content_type='application/json',
+            headers=api_headers
         )
         
         assert response.status_code == 500
@@ -286,7 +298,7 @@ class TestResponseEndpoint:
         assert 'error' in json_data
         assert 'server' in json_data['error'].lower()
     
-    def test_multiple_context_messages(self, client, mock_ollama_chat):
+    def test_multiple_context_messages(self, client, mock_ollama_chat, api_headers):
         """Test with multiple context messages."""
         mock_ollama_chat.return_value = {
             'message': {
@@ -309,7 +321,8 @@ class TestResponseEndpoint:
         response = client.post(
             '/api/v1/response',
             data=json.dumps(data),
-            content_type='application/json'
+            content_type='application/json',
+            headers=api_headers
         )
         
         assert response.status_code == 200
@@ -321,7 +334,7 @@ class TestResponseEndpoint:
 class TestModelsEndpoint:
     """Tests for the /api/v1/models endpoint."""
     
-    def test_get_models_success(self, client, mock_ollama_list):
+    def test_get_models_success(self, client, mock_ollama_list, api_headers):
         """Test successful retrieval of models."""
         mock_model1 = MagicMock()
         mock_model1.model = 'llama2'
@@ -332,7 +345,7 @@ class TestModelsEndpoint:
             'models': [mock_model1, mock_model2]
         }
         
-        response = client.get('/api/v1/models')
+        response = client.get('/api/v1/models', headers=api_headers)
         
         assert response.status_code == 200
         json_data = json.loads(response.data)
@@ -342,53 +355,53 @@ class TestModelsEndpoint:
         assert 'llama2' in json_data['models']
         assert 'granite3.3:2b' in json_data['models']
     
-    def test_get_models_empty_list(self, client, mock_ollama_list):
+    def test_get_models_empty_list(self, client, mock_ollama_list, api_headers):
         """Test when no models are available."""
         mock_ollama_list.return_value = {
             'models': []
         }
         
-        response = client.get('/api/v1/models')
+        response = client.get('/api/v1/models', headers=api_headers)
         
         assert response.status_code == 200
         json_data = json.loads(response.data)
         assert json_data['models'] == []
         assert json_data['count'] == 0
     
-    def test_get_models_missing_models_key(self, client, mock_ollama_list):
+    def test_get_models_missing_models_key(self, client, mock_ollama_list, api_headers):
         """Test when Ollama response doesn't have 'models' key."""
         mock_ollama_list.return_value = {}
         
-        response = client.get('/api/v1/models')
+        response = client.get('/api/v1/models', headers=api_headers)
         
         assert response.status_code == 200
         json_data = json.loads(response.data)
         assert json_data['models'] == []
         assert json_data['count'] == 0
     
-    def test_get_models_ollama_response_error(self, client, mock_ollama_list, mock_ollama_response_error):
+    def test_get_models_ollama_response_error(self, client, mock_ollama_list, mock_ollama_response_error, api_headers):
         """Test handling of Ollama ResponseError."""
         mock_ollama_list.side_effect = mock_ollama_response_error('Ollama server error')
         
-        response = client.get('/api/v1/models')
+        response = client.get('/api/v1/models', headers=api_headers)
         
         assert response.status_code == 500
         json_data = json.loads(response.data)
         assert 'error' in json_data
         assert 'ollama' in json_data['error'].lower()
     
-    def test_get_models_general_exception(self, client, mock_ollama_list):
+    def test_get_models_general_exception(self, client, mock_ollama_list, api_headers):
         """Test handling of general exceptions."""
         mock_ollama_list.side_effect = Exception('Connection error')
         
-        response = client.get('/api/v1/models')
+        response = client.get('/api/v1/models', headers=api_headers)
         
         assert response.status_code == 500
         json_data = json.loads(response.data)
         assert 'error' in json_data
         assert 'server' in json_data['error'].lower()
     
-    def test_get_models_single_model(self, client, mock_ollama_list):
+    def test_get_models_single_model(self, client, mock_ollama_list, api_headers):
         """Test with single model available."""
         mock_model = MagicMock()
         mock_model.model = 'llama2'
@@ -397,7 +410,7 @@ class TestModelsEndpoint:
             'models': [mock_model]
         }
         
-        response = client.get('/api/v1/models')
+        response = client.get('/api/v1/models', headers=api_headers)
         
         assert response.status_code == 200
         json_data = json.loads(response.data)
@@ -438,7 +451,7 @@ class TestServerConfiguration:
 class TestEdgeCases:
     """Tests for edge cases and boundary conditions."""
     
-    def test_response_with_very_long_prompt(self, client, mock_ollama_chat):
+    def test_response_with_very_long_prompt(self, client, mock_ollama_chat, api_headers):
         """Test handling of very long prompts."""
         mock_ollama_chat.return_value = {
             'message': {
@@ -455,14 +468,15 @@ class TestEdgeCases:
         response = client.post(
             '/api/v1/response',
             data=json.dumps(data),
-            content_type='application/json'
+            content_type='application/json',
+            headers=api_headers
         )
         
         assert response.status_code == 200
         call_args = mock_ollama_chat.call_args
         assert call_args[1]['messages'][0]['content'] == long_prompt
     
-    def test_response_with_special_characters(self, client, mock_ollama_chat):
+    def test_response_with_special_characters(self, client, mock_ollama_chat, api_headers):
         """Test handling of special characters in prompt."""
         mock_ollama_chat.return_value = {
             'message': {
@@ -479,14 +493,15 @@ class TestEdgeCases:
         response = client.post(
             '/api/v1/response',
             data=json.dumps(data),
-            content_type='application/json'
+            content_type='application/json',
+            headers=api_headers
         )
         
         assert response.status_code == 200
         call_args = mock_ollama_chat.call_args
         assert call_args[1]['messages'][0]['content'] == special_prompt
     
-    def test_response_with_unicode_characters(self, client, mock_ollama_chat):
+    def test_response_with_unicode_characters(self, client, mock_ollama_chat, api_headers):
         """Test handling of unicode characters."""
         mock_ollama_chat.return_value = {
             'message': {
@@ -503,7 +518,8 @@ class TestEdgeCases:
         response = client.post(
             '/api/v1/response',
             data=json.dumps(data),
-            content_type='application/json'
+            content_type='application/json',
+            headers=api_headers
         )
         
         assert response.status_code == 200
@@ -525,7 +541,7 @@ class TestEdgeCases:
         response = client.get('/api/v1/nonexistent')
         assert response.status_code == 404
     
-    def test_response_missing_message_key(self, client, mock_ollama_chat):
+    def test_response_missing_message_key(self, client, mock_ollama_chat, api_headers):
         """Test handling when Ollama response is missing 'message' key."""
         mock_ollama_chat.return_value = {}
         
@@ -537,13 +553,14 @@ class TestEdgeCases:
         response = client.post(
             '/api/v1/response',
             data=json.dumps(data),
-            content_type='application/json'
+            content_type='application/json',
+            headers=api_headers
         )
         
         # Should handle KeyError gracefully
         assert response.status_code == 500
     
-    def test_response_missing_content_key(self, client, mock_ollama_chat):
+    def test_response_missing_content_key(self, client, mock_ollama_chat, api_headers):
         """Test handling when Ollama response message is missing 'content' key."""
         mock_ollama_chat.return_value = {
             'message': {}
@@ -557,9 +574,111 @@ class TestEdgeCases:
         response = client.post(
             '/api/v1/response',
             data=json.dumps(data),
-            content_type='application/json'
+            content_type='application/json',
+            headers=api_headers
         )
         
         # Should handle KeyError gracefully
         assert response.status_code == 500
+
+
+class TestApiKeyAuthentication:
+    """Tests for API key authentication."""
+    
+    def test_response_endpoint_missing_api_key(self, client, api_key):
+        """Test that /api/v1/response returns 401 without API key."""
+        data = {
+            'prompt': 'Hello',
+            'model': 'llama2'
+        }
+        
+        response = client.post(
+            '/api/v1/response',
+            data=json.dumps(data),
+            content_type='application/json'
+        )
+        
+        assert response.status_code == 401
+        json_data = json.loads(response.data)
+        assert 'error' in json_data
+        assert 'api key' in json_data['error'].lower()
+    
+    def test_response_endpoint_invalid_api_key(self, client, api_key):
+        """Test that /api/v1/response returns 401 with invalid API key."""
+        data = {
+            'prompt': 'Hello',
+            'model': 'llama2'
+        }
+        
+        response = client.post(
+            '/api/v1/response',
+            data=json.dumps(data),
+            content_type='application/json',
+            headers={'X-API-Key': 'wrong-key'}
+        )
+        
+        assert response.status_code == 401
+        json_data = json.loads(response.data)
+        assert 'error' in json_data
+        assert 'api key' in json_data['error'].lower()
+    
+    def test_models_endpoint_missing_api_key(self, client, api_key):
+        """Test that /api/v1/models returns 401 without API key."""
+        response = client.get('/api/v1/models')
+        
+        assert response.status_code == 401
+        json_data = json.loads(response.data)
+        assert 'error' in json_data
+        assert 'api key' in json_data['error'].lower()
+    
+    def test_models_endpoint_invalid_api_key(self, client, api_key):
+        """Test that /api/v1/models returns 401 with invalid API key."""
+        response = client.get('/api/v1/models', headers={'X-API-Key': 'wrong-key'})
+        
+        assert response.status_code == 401
+        json_data = json.loads(response.data)
+        assert 'error' in json_data
+        assert 'api key' in json_data['error'].lower()
+    
+    def test_index_route_no_auth_required(self, client, api_key):
+        """Test that index route doesn't require API key."""
+        response = client.get('/')
+        assert response.status_code == 200
+        assert 'text/html' in response.content_type
+    
+    def test_response_endpoint_valid_api_key(self, client, mock_ollama_chat, api_headers):
+        """Test that /api/v1/response works with valid API key."""
+        mock_ollama_chat.return_value = {
+            'message': {
+                'content': 'Response'
+            }
+        }
+        
+        data = {
+            'prompt': 'Hello',
+            'model': 'llama2'
+        }
+        
+        response = client.post(
+            '/api/v1/response',
+            data=json.dumps(data),
+            content_type='application/json',
+            headers=api_headers
+        )
+        
+        assert response.status_code == 200
+    
+    def test_models_endpoint_valid_api_key(self, client, mock_ollama_list, api_headers):
+        """Test that /api/v1/models works with valid API key."""
+        mock_model = MagicMock()
+        mock_model.model = 'llama2'
+        mock_ollama_list.return_value = {
+            'models': [mock_model]
+        }
+        
+        response = client.get('/api/v1/models', headers=api_headers)
+        
+        assert response.status_code == 200
+        json_data = json.loads(response.data)
+        assert 'models' in json_data
 

@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, send_from_directory
 from werkzeug.exceptions import BadRequest
+from functools import wraps
 import ollama
 import os
 
@@ -7,6 +8,25 @@ app = Flask(__name__)
 
 # Ollama configuration
 OLLAMA_HOST = "http://localhost:11434"
+
+# API Key configuration
+API_KEY = os.environ.get('API_KEY')
+
+
+def require_api_key(f):
+    """Decorator to require API key authentication for endpoints."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not API_KEY:
+            # If no API key is configured, allow access (backward compatibility)
+            return f(*args, **kwargs)
+        
+        api_key = request.headers.get('X-API-Key')
+        if not api_key or api_key != API_KEY:
+            return jsonify({"error": "Invalid or missing API key"}), 401
+        
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 @app.route('/')
@@ -16,6 +36,7 @@ def index():
 
 
 @app.route('/api/v1/response', methods=['POST'])
+@require_api_key
 def get_response():
     """
     Query Ollama with a user prompt and return the response.
@@ -79,6 +100,7 @@ def get_response():
 
 
 @app.route('/api/v1/models', methods=['GET'])
+@require_api_key
 def get_models():
     """
     Get list of available models from Ollama.
