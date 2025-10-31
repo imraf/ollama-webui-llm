@@ -405,7 +405,7 @@ See `static/style.css` for complete styling details.
 
 ## Initialization
 
-The application initializes when the DOM is ready:
+The application initializes when the DOM is ready. The first action performed is an authentication requirement check via the public endpoint `/api/v1/auth-required`.
 
 ```675:680:static/app.js
 // Initialize app when DOM is ready
@@ -416,13 +416,66 @@ if (document.readyState === 'loading') {
 }
 ```
 
-The `init()` function:
-1. Checks for stored API key
-2. Validates API key if present
-3. Loads chat history from localStorage
-4. Loads available models
-5. Sets up event listeners
-6. Renders previous chats
+### Startup Flow (`init()`)
+
+```javascript
+async function init() {
+    const authRequired = await checkAuthRequirement();
+    
+    if (!authRequired) {
+        // Auth not required: show interface immediately
+        showMainInterface();
+        loadChatsFromStorage();
+        await loadModels();
+        setupEventListeners();
+        return; // Skip login listeners entirely
+    }
+    
+    // Auth required path
+    apiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
+    if (apiKey) {
+        const isValid = await validateApiKey(apiKey);
+        if (isValid) {
+            showMainInterface();
+            loadChatsFromStorage();
+            await loadModels();
+            setupEventListeners();
+        } else {
+            clearApiKey();
+            showLoginForm();
+        }
+    } else {
+        showLoginForm();
+    }
+    setupLoginListeners();
+}
+```
+
+### Sequence Explanation
+1. Call `/api/v1/auth-required` (always public) to detect whether API key enforcement is active.
+2. If `auth_required` is false:
+   - Skip all login logic.
+   - Immediately show main interface and proceed to load chats/models.
+3. If `auth_required` is true:
+   - Attempt to reuse a stored key from `localStorage`.
+   - Validate the key by calling `/api/v1/models` and checking for a non-401 status.
+   - If validation succeeds: show interface and continue loading.
+   - If validation fails or no key exists: present the login form.
+4. Attach either chat event listeners (unprotected path) or both login + chat listeners (protected path).
+
+### Why Detection First?
+- Avoids unnecessary login prompts when the server runs without an `API_KEY`.
+- Provides a frictionless startup in open mode (no modal flash).
+- Enables graceful fallback: if detection fails (network error), the frontend assumes auth is required for safety.
+
+### Post-Auth Actions
+After successful detection (and optional validation):
+- Chat history is loaded (`loadChatsFromStorage()`).
+- Model list is fetched (`loadModels()`), including `X-API-Key` if applicable.
+- Event listeners for sending messages, creating chats, and Enter key handling are installed.
+- Previous chats are rendered in the sidebar.
+
+See also: [API Key System](04-API-Key-System.md) and [Backend Setup](03-Backend-Setup.md) for related endpoint details.
 
 ## Related Documentation
 

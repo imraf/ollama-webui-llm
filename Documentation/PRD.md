@@ -132,11 +132,13 @@ A minimal, lightweight web-based chat interface for interacting with locally run
 - **FR-6.4**: System must display login form when API key is required
 
 #### 3.6.2 Authentication Flow
-- **FR-6.5**: Users must enter API key in login form
-- **FR-6.6**: System must validate API key before granting access
-- **FR-6.7**: API key must be stored in browser localStorage
-- **FR-6.8**: System must handle expired or invalid API keys gracefully
-- **FR-6.9**: All API requests must include API key in headers when configured
+- **FR-6.5**: Frontend must call `/api/v1/auth-required` first to detect enforcement state
+- **FR-6.6**: Users must enter API key in login form when `auth_required` is true
+- **FR-6.7**: System must validate API key before granting access (test request to `/api/v1/models`)
+- **FR-6.8**: API key must be stored in browser localStorage
+- **FR-6.9**: System must handle expired or invalid API keys gracefully (show login form again)
+- **FR-6.10**: All protected API requests must include API key in `X-API-Key` header when configured
+- **FR-6.11**: On detection failure (network), default to requiring auth (safe fallback)
 
 ---
 
@@ -166,7 +168,7 @@ A minimal, lightweight web-based chat interface for interacting with locally run
 
 #### 4.2.1 Server Architecture
 - **TR-4.1**: Single Flask application file (`server.py`)
-- **TR-4.2**: RESTful API endpoints: `/api/v1/response`, `/api/v1/models`
+- **TR-4.2**: RESTful API endpoints: `/api/v1/response`, `/api/v1/models`, `/api/v1/auth-required`
 - **TR-4.3**: Static file serving from `static/` directory
 - **TR-4.4**: Environment variable configuration (PORT, DEBUG, API_KEY)
 
@@ -196,6 +198,13 @@ A minimal, lightweight web-based chat interface for interacting with locally run
 - **TR-8.2**: Query Ollama for available models
 - **TR-8.3**: Handle Ollama connection errors gracefully
 - **TR-8.4**: Support API key authentication via `X-API-Key` header
+ 
+#### 4.3.3 GET /api/v1/auth-required
+ - **TR-9.1**: Return JSON with `auth_required` boolean
+ - **TR-9.2**: Always public; never requires API key
+ - **TR-9.3**: Used by frontend at startup to decide whether to show login form
+ - **TR-9.4**: If `auth_required` is `true`, frontend validates stored key or prompts user
+ - **TR-9.5**: Conservative fallback: on request failure, frontend assumes `true`
 
 ### 4.4 Error Handling
 
@@ -204,6 +213,7 @@ A minimal, lightweight web-based chat interface for interacting with locally run
 - **TR-9.2**: Return appropriate HTTP status codes (400, 401, 500)
 - **TR-9.3**: Provide user-friendly error messages
 - **TR-9.4**: Handle invalid JSON and missing fields
+- **TR-9.5**: Auth detection endpoint always returns 200 unless an unexpected server error occurs
 
 #### 4.4.2 Frontend Error Handling
 - **TR-10.1**: Display user-friendly error messages in chat

@@ -8,7 +8,7 @@ The application integrates with [Ollama](https://ollama.ai/) to serve Large Lang
 
 ### Ollama Library Integration
 
-The application uses the official `ollama` Python library to communicate with a local Ollama instance:
+The application uses the official `ollama` Python library to communicate with a local Ollama instance. Before any model interaction occurs on the frontend, the app first determines whether authentication is required by calling the public detection endpoint (`GET /api/v1/auth-required`). If the server reports `{"auth_required": true}`, subsequent protected requests include the `X-API-Key` header; otherwise, the UI skips the login flow entirely.
 
 ```4:4:server.py
 import ollama
@@ -26,11 +26,11 @@ OLLAMA_HOST = "http://localhost:11434"
 
 #### Listing Available Models
 
-The application queries Ollama to retrieve a list of locally available models using the `ollama.list()` function:
+The application queries Ollama to retrieve a list of locally available models using the `ollama.list()` function (executed inside the `/api/v1/models` endpoint, which may require an API key depending on server configuration).
 
 ```102:118:server.py
 @app.route('/api/v1/models', methods=['GET'])
-@require_api_key
+@require_api_key  # Protected if API_KEY env var is set; open if not
 def get_models():
     """
     Get list of available models from Ollama.
@@ -132,6 +132,34 @@ For unexpected errors:
 
 This provides a fallback for any other exceptions that might occur.
 
+### Authentication Detection Endpoint
+
+Before any model or response request, the frontend calls a lightweight public endpoint to detect whether authentication is enforced:
+
+```python
+@app.route('/api/v1/auth-required', methods=['GET'])
+def auth_required():
+    """Return whether API key authentication is enforced by the server.
+
+    Response JSON:
+    { "auth_required": true/false }
+    """
+    return jsonify({"auth_required": bool(API_KEY)})
+```
+
+**Behavior:**
+- Returns `{"auth_required": false}` when no `API_KEY` environment variable is set (all protected endpoints behave as open).
+- Returns `{"auth_required": true}` when `API_KEY` is configured; the frontend then prompts the user for a key and includes it via `X-API-Key` header.
+- If the detection request fails (network error), the frontend conservatively assumes auth is required and shows the login form.
+
+**Frontend Flow Integration:**
+1. Call `/api/v1/auth-required` at startup.
+2. If `false`: show interface immediately, then call `/api/v1/models`.
+3. If `true`: attempt to validate a stored key; if none or invalid, prompt user.
+4. All subsequent requests include `X-API-Key` when present.
+
+See also: [API Key System](04-API-Key-System.md).
+
 ## Configuration
 
 ### Environment Setup
@@ -153,6 +181,7 @@ ollama pull granite3.3:2b
 - **Host**: `http://localhost:11434` (hardcoded constant)
 - **Port**: Ollama default port is 11434
 - **Connection**: Direct HTTP connection to local Ollama instance
+- **Auth Detection**: `GET /api/v1/auth-required` (public) communicates whether `X-API-Key` must be included for `/api/v1/models` and `/api/v1/response`.
 
 ## How It Works
 

@@ -682,3 +682,35 @@ class TestApiKeyAuthentication:
         json_data = json.loads(response.data)
         assert 'models' in json_data
 
+
+class TestAuthRequiredEndpoint:
+    """Tests for the /api/v1/auth-required detection endpoint."""
+
+    def test_auth_required_endpoint_no_api_key(self, client):
+        """Should return auth_required: false when API_KEY not set."""
+        import server
+        original = server.API_KEY
+        server.API_KEY = None
+        response = client.get('/api/v1/auth-required')
+        data = response.get_json()
+        assert response.status_code == 200
+        assert data == {"auth_required": False}
+        server.API_KEY = original
+
+    def test_auth_required_endpoint_with_api_key(self, client):
+        """Should return auth_required: true when API_KEY is set."""
+        import server
+        original = server.API_KEY
+        server.API_KEY = 'temp-key-xyz'
+        response = client.get('/api/v1/auth-required')
+        data = response.get_json()
+        assert response.status_code == 200
+        assert data == {"auth_required": True}
+        server.API_KEY = original
+
+    def test_auth_required_endpoint_public_access(self, client, api_key):
+        """Endpoint should be accessible without providing API key header even when key configured."""
+        response = client.get('/api/v1/auth-required')
+        assert response.status_code == 200
+        assert 'auth_required' in response.get_json()
+

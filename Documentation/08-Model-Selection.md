@@ -8,10 +8,10 @@ The application dynamically loads available models from Ollama and presents them
 
 ### Initial Load
 
-Models are loaded when the application initializes:
+Models are loaded after the application determines whether authentication is required (via `/api/v1/auth-required`). If auth is enforced, the user must supply a valid API key before `loadModels()` runs; otherwise models load immediately.
 
 ```153:204:static/app.js
-// Load available models from the API
+// Load available models from the API (called only after auth requirement resolved)
 async function loadModels() {
     try {
         const response = await fetch('/api/v1/models', {

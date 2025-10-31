@@ -167,6 +167,40 @@ def get_models():
 - `401`: Invalid or missing API key (if authentication enabled)
 - `500`: Ollama connection errors or server exceptions
 
+### GET /api/v1/auth-required
+
+Public detection endpoint indicating whether the server is currently enforcing API key authentication. Always returns `200` and never requires an API key itself.
+
+**Endpoint Definition:**
+
+```python
+@app.route('/api/v1/auth-required', methods=['GET'])
+def auth_required():
+    """Return whether API key authentication is enforced by the server.
+
+    Response JSON:
+    { "auth_required": true/false }
+    """
+    return jsonify({"auth_required": bool(API_KEY)})
+```
+
+**Response Format:**
+```json
+{ "auth_required": true }
+```
+
+**Behavior:**
+- If `API_KEY` environment variable is unset: returns `{ "auth_required": false }` and the frontend skips login.
+- If `API_KEY` is set: returns `{ "auth_required": true }` and the frontend validates or requests a key.
+- If the request fails client-side (network error), the frontend assumes auth is required (conservative fallback) and shows the login form.
+
+**Usage in Frontend Startup:**
+1. Call `/api/v1/auth-required`.
+2. Branch UI: login flow vs direct interface.
+3. Protected endpoints (`/api/v1/models`, `/api/v1/response`) include `X-API-Key` when required.
+
+See: [Chat Interface](02-Chat-Interface.md) and [API Key System](04-API-Key-System.md).
+
 ## Request/Response Handling
 
 ### JSON Processing

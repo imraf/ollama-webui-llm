@@ -8,7 +8,7 @@ The application maintains a persistent chat history using browser localStorage. 
 
 ### localStorage Usage
 
-Chats are stored in browser localStorage under the key `'llm-chats'`:
+Chats are stored in browser localStorage under the key `'llm-chats'`. Loading of chats occurs only after the application determines whether authentication is required via `/api/v1/auth-required` (to avoid flashing the interface before a potential login prompt).
 
 ```558:577:static/app.js
 // Local storage functions

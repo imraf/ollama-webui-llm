@@ -2,7 +2,7 @@
 
 ## Overview
 
-The application renders assistant responses as markdown, providing rich formatting for code blocks, lists, tables, headers, and other markdown elements. User messages are displayed as plain text, while assistant messages are parsed and rendered using the Marked.js library.
+The application renders assistant responses as markdown, providing rich formatting for code blocks, lists, tables, headers, and other markdown elements. User messages are displayed as plain text, while assistant messages are parsed and rendered using the Marked.js library. Rendering begins only after startup finishes the authentication requirement detection (`/api/v1/auth-required`) and, if needed, user API key validation—ensuring the interface does not partially render before access is granted.
 
 ## Marked.js Integration
 

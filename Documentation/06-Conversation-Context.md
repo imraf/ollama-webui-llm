@@ -29,6 +29,7 @@ The application maintains a **sliding window** of the last 3 messages:
 - `currentChat.messages.slice(-4, -1)` gets the last 3 messages before the current one
 - The current user prompt is already added to `currentChat.messages` before context extraction
 - This ensures the model sees the conversation flow leading up to the current question
+ - Context construction only begins after startup completes the auth requirement detection (`/api/v1/auth-required`) and (if needed) API key validation, ensuring protected endpoints are called correctly.
 
 ### Backend Context Processing
 

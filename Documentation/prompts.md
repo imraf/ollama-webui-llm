@@ -61,7 +61,7 @@ The application should be:
 
 6. **Optional Authentication**
    - Support optional API key authentication via environment variable
-   - Display login form when API key is required
+   - Detect requirement first by calling `/api/v1/auth-required` (public); display login form only when `auth_required` is true
    - Store API key in browser localStorage
    - Backward compatible (works without API key if not configured)
    - All API requests include API key in headers when configured
@@ -71,7 +71,7 @@ The application should be:
 **Backend:**
 - Flask web framework (Python 3.12+)
 - Ollama Python library for model interaction
-- RESTful API endpoints: `/api/v1/response` (POST), `/api/v1/models` (GET)
+- RESTful API endpoints: `/api/v1/response` (POST), `/api/v1/models` (GET), `/api/v1/auth-required` (GET, public detection)
 - Environment variable configuration (PORT, DEBUG, API_KEY)
 - No database (localStorage for frontend persistence)
 

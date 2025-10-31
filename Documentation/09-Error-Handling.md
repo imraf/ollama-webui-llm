@@ -108,6 +108,19 @@ The backend handles errors in order of specificity:
 - Status: `401 Unauthorized`
 - Message: `"Invalid or missing API key"`
 
+### Auth Requirement Detection Endpoint
+
+The `/api/v1/auth-required` endpoint is intentionally simple and public. It returns `200` with a JSON body indicating whether authentication is enforced. It does not raise authentication errors itself; failures are limited to unexpected server errors (very rare) or network issues on the client side.
+
+**Client-Side Failure Handling:**
+- If the fetch to `/api/v1/auth-required` fails (network error, offline state, CORS misconfiguration), the frontend conservatively assumes `auth_required = true` and shows the login form.
+- This prevents accidentally exposing protected endpoints if the detection request cannot complete.
+
+**Design Rationale:**
+- Keeps detection lightweight (no decorator / authentication logic).
+- Ensures a single source of truth for auth state communicated early in the lifecycle.
+- Avoids ambiguous UI states (e.g., flashing the interface then swapping to login).
+
 ## Frontend Error Handling
 
 ### Network Errors

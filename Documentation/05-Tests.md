@@ -298,6 +298,34 @@ Tests for server configuration and setup.
 **Expected Result:**
 - `run_server` is callable
 
+### TestAuthRequiredEndpoint
+
+Tests for the `/api/v1/auth-required` detection endpoint.
+
+#### test_auth_required_endpoint_no_api_key
+
+**Purpose:** Verify endpoint returns `auth_required: false` when no `API_KEY` is configured.
+
+**Expected Result:**
+- Status code: `200`
+- JSON: `{ "auth_required": false }`
+
+#### test_auth_required_endpoint_with_api_key
+
+**Purpose:** Verify endpoint returns `auth_required: true` when `API_KEY` is set.
+
+**Expected Result:**
+- Status code: `200`
+- JSON: `{ "auth_required": true }`
+
+#### test_auth_required_endpoint_always_public
+
+**Purpose:** Ensure endpoint never returns 401 even when other endpoints are protected.
+
+**Expected Result:**
+- Status code: `200`
+- Accessible without `X-API-Key` header
+
 ### TestEdgeCases
 
 Tests for edge cases and boundary conditions.
@@ -463,7 +491,7 @@ pytest tests/test_server.py::TestResponseEndpoint::test_valid_request_with_promp
 
 ## Test Coverage
 
-The test suite includes **40+ test cases** covering:
+The test suite includes **40+ test cases** covering (with new auth detection tests):
 
 - **Index Route**: HTML file serving
 - **Response Endpoint**: 
@@ -482,6 +510,7 @@ The test suite includes **40+ test cases** covering:
   - Valid API key acceptance
   - Backward compatibility (no API key set)
 - **Server Configuration**: Environment variables and constants
+- **Auth Detection Endpoint**: Presence, behavior with/without `API_KEY`, public accessibility
 - **Edge Cases**: Boundary conditions and error paths
 
 ## Mocking Strategy
