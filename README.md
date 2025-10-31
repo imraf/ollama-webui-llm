@@ -48,6 +48,7 @@ A clean, mobile-inspired chat UI to interact with models served by [Ollama](http
 | 🧾 Markdown | Supports code blocks, tables, lists via client-side rendering |
 | 🪄 Zero Build | No bundlers, transpilers, or Node dependencies |
 | 📱 Responsive | Feels like a compact mobile chat on wider screens |
+| 🔐 Optional Auth | Drop-in API key protection with automatic requirement detection |
 
 ### Chat Flow
 The core experience: a clean conversation stream showing your prompts and the model's markdown-formatted replies. Messages auto-scroll, code blocks, lists, and tables render seamlessly for readability.
@@ -138,18 +139,22 @@ Ollama host (implicit): `http://localhost:11434`
 
 ### API Key Authentication
 
-The application supports API key authentication to protect access to the chat interface:
+The application supports **optional** API key authentication to protect access. If you don't set an `API_KEY`, the app runs fully open (backward compatible). On startup the frontend first calls the public endpoint `/api/v1/auth-required` to determine whether it should prompt for a key.
 
-1. **Set an API key** by setting the `API_KEY` environment variable when starting the server:
+1. **Set an API key (optional)** by providing the `API_KEY` environment variable when starting the server:
    ```bash
    API_KEY=your-secret-key python server.py
    ```
 
-2. **Access the web interface** - When you visit the application, you'll be prompted to enter the API key.
+2. **Startup detection** - The client calls `/api/v1/auth-required`:
+  - Returns `{ "auth_required": true }` → login form displayed.
+  - Returns `{ "auth_required": false }` → interface loads immediately.
 
-3. **API key storage** - The API key is stored in your browser's localStorage and automatically sent with all API requests.
+3. **API key storage** - The key is stored in browser localStorage (`llm-api-key`) and automatically added as `X-API-Key` for protected endpoints.
 
-4. **No API key** - If `API_KEY` is not set, the application works without authentication (backward compatible).
+4. **No API key scenario** - If `API_KEY` is not set, `/api/v1/auth-required` returns `false` and the app skips the login form entirely.
+5. **Failure fallback** - If the detection request fails (e.g. network hiccup), the client conservatively assumes auth is required and shows the login form.
+6. **Session expiration** - A 401 response from any protected endpoint clears the stored key and re-prompts.
 
 ---
 
