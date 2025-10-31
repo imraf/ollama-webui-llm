@@ -48,6 +48,8 @@ async function init() {
         // Auth not required: go straight to main interface
         showMainInterface();
         loadChatsFromStorage();
+        // Populate sidebar with any previously saved chats immediately
+        renderPreviousChats();
         await loadModels();
         setupEventListeners();
         return; // Skip login listeners
@@ -60,6 +62,8 @@ async function init() {
         if (isValid) {
             showMainInterface();
             loadChatsFromStorage();
+            // Populate sidebar with previous chats before loading models
+            renderPreviousChats();
             await loadModels();
             setupEventListeners();
         } else {
@@ -111,6 +115,8 @@ async function handleLogin(event) {
         localStorage.setItem(API_KEY_STORAGE_KEY, key);
         showMainInterface();
         loadChatsFromStorage();
+        // Show previous chats immediately upon successful login
+        renderPreviousChats();
         await loadModels();
         setupEventListeners();
         renderPreviousChats();
