@@ -40,6 +40,7 @@ A clean, mobile-inspired chat UI to interact with models served by [Ollama](http
 | Category | Description |
 |----------|-------------|
 | 💬 Chat Interface | Simple two-column layout with markdown-rendered model replies |
+| 🔐 Optional API-KEY Auth | Drop-in API key protection with automatic requirement detection |
 | 🤖 Local Models | Uses any model already pulled into your Ollama install |
 | 🎯 Model Picker | Dynamic dropdown of locally available models |
 | 🔁 Context | Sends last 3 messages each turn for coherent multi-turn dialogue |
@@ -48,7 +49,6 @@ A clean, mobile-inspired chat UI to interact with models served by [Ollama](http
 | 🧾 Markdown | Supports code blocks, tables, lists via client-side rendering |
 | 🪄 Zero Build | No bundlers, transpilers, or Node dependencies |
 | 📱 Responsive | Feels like a compact mobile chat on wider screens |
-| 🔐 Optional Auth | Drop-in API key protection with automatic requirement detection |
 
 ### Chat Flow
 The core experience: a clean conversation stream showing your prompts and the model's markdown-formatted replies. Messages auto-scroll, code blocks, lists, and tables render seamlessly for readability.
