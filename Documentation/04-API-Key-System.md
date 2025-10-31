@@ -118,6 +118,8 @@ async function init() {
     if (!authRequired) {
         showMainInterface();
         loadChatsFromStorage();
+        // Show previously saved chats right away
+        renderPreviousChats();
         await loadModels();
         setupEventListeners();
         return; // skip API key form entirely
@@ -129,6 +131,8 @@ async function init() {
         if (isValid) {
             showMainInterface();
             loadChatsFromStorage();
+            // Populate chat history before models
+            renderPreviousChats();
             await loadModels();
             setupEventListeners();
         } else {

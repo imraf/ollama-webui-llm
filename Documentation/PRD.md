@@ -102,12 +102,13 @@ A minimal, lightweight web-based chat interface for interacting with locally run
 - **FR-4.7**: System must display chat titles and previews in sidebar
 - **FR-4.8**: System must highlight currently active chat
 - **FR-4.9**: Users must be able to delete chats (optional - future enhancement)
+- **FR-4.10 (Updated)**: Previously saved chats must render immediately upon interface initialization (after auth detection / validation) without requiring the user to create a new chat first.
 
 #### 3.4.3 Chat Titles
-- **FR-4.10**: System must auto-generate chat titles from first user message
-- **FR-4.11**: Title generation must use LLM to create concise titles (max 6 words)
-- **FR-4.12**: System must fallback to truncated first message if title generation fails
-- **FR-4.13**: Titles must be limited to 50 characters with ellipsis
+- **FR-4.11**: System must auto-generate chat titles from first user message
+- **FR-4.12**: Title generation must use LLM to create concise titles (max 6 words)
+- **FR-4.13**: System must fallback to truncated first message if title generation fails
+- **FR-4.14**: Titles must be limited to 50 characters with ellipsis
 
 ### 3.5 Markdown Rendering
 

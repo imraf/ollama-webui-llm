@@ -8,7 +8,7 @@ The application maintains a persistent chat history using browser localStorage. 
 
 ### localStorage Usage
 
-Chats are stored in browser localStorage under the key `'llm-chats'`. Loading of chats occurs only after the application determines whether authentication is required via `/api/v1/auth-required` (to avoid flashing the interface before a potential login prompt).
+Chats are stored in browser localStorage under the key `'llm-chats'`. After the application determines whether authentication is required via `/api/v1/auth-required` (and validates a stored key if needed), it now immediately renders any previously saved chats in the sidebar. Users no longer need to create a new chat to see history.
 
 ```558:577:static/app.js
 // Local storage functions
@@ -210,7 +210,7 @@ async function generateChatTitle(firstPrompt, model) {
 
 ### Loading from Storage
 
-On app initialization:
+On app initialization (after auth requirement check and optional API key validation), chats are loaded from storage and immediately rendered:
 
 ```567:577:static/app.js
 function loadChatsFromStorage() {

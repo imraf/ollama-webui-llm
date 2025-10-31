@@ -426,6 +426,8 @@ async function init() {
         // Auth not required: show interface immediately
         showMainInterface();
         loadChatsFromStorage();
+        // Immediately render any previously saved chats in the sidebar
+        renderPreviousChats();
         await loadModels();
         setupEventListeners();
         return; // Skip login listeners entirely
@@ -438,6 +440,8 @@ async function init() {
         if (isValid) {
             showMainInterface();
             loadChatsFromStorage();
+            // Populate sidebar before model load
+            renderPreviousChats();
             await loadModels();
             setupEventListeners();
         } else {
