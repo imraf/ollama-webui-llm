@@ -134,5 +134,15 @@ def run_server():
     app.run(host='0.0.0.0', port=port, debug=debug)
 
 
+@app.route('/api/v1/auth-required', methods=['GET'])
+def auth_required():
+    """Return whether API key authentication is enforced by the server.
+
+    Response JSON:
+    { "auth_required": true/false }
+    """
+    return jsonify({"auth_required": bool(API_KEY)})
+
+
 if __name__ == "__main__":
     run_server()

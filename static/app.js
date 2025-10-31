@@ -27,30 +27,48 @@ const apiKeyInput = document.getElementById('api-key-input');
 const loginError = document.getElementById('login-error');
 const loginSubmitBtn = document.getElementById('login-submit-btn');
 
+// Check if server requires authentication
+async function checkAuthRequirement() {
+    try {
+        const res = await fetch('/api/v1/auth-required');
+        if (!res.ok) return true; // Fail safe: assume auth required if endpoint fails
+        const data = await res.json();
+        return !!data.auth_required;
+    } catch (e) {
+        console.error('Failed to determine auth requirement:', e);
+        return true; // conservative default
+    }
+}
+
 // Initialize the app
 async function init() {
-    // Check for stored API key
-    apiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
+    const authRequired = await checkAuthRequirement();
     
+    if (!authRequired) {
+        // Auth not required: go straight to main interface
+        showMainInterface();
+        loadChatsFromStorage();
+        await loadModels();
+        setupEventListeners();
+        return; // Skip login listeners
+    }
+    
+    // Auth required path
+    apiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
     if (apiKey) {
-        // Validate stored API key
         const isValid = await validateApiKey(apiKey);
         if (isValid) {
             showMainInterface();
             loadChatsFromStorage();
             await loadModels();
             setupEventListeners();
-            renderPreviousChats();
         } else {
-            // Invalid key, clear it and show login
             clearApiKey();
             showLoginForm();
         }
     } else {
-        // No API key, show login form
         showLoginForm();
     }
-    
     setupLoginListeners();
 }
 
