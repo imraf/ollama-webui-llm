@@ -68,6 +68,25 @@ def index():
     return send_from_directory('static', 'index.html')
 ```
 
+    ### Authentication Detection Endpoint
+
+    This endpoint exposes whether authentication is currently enforced:
+
+    ```server.py
+    @app.route('/api/v1/auth-required', methods=['GET'])
+    def auth_required():
+        return jsonify({"auth_required": bool(API_KEY)})
+    ```
+
+    **Notes:**
+    - Always returns HTTP 200 (unless unexpected server error).
+    - Never protected by API key; must be callable before the client knows a key.
+    - Returns a single boolean field: `auth_required`.
+    - If `API_KEY` is unset/empty => `auth_required: false`.
+    - Use for dynamic UI decisions (skip/show login).
+
+    **Potential Hardening (optional):** Add simple rate limiting to avoid excessive probing requests.
+
 ## Frontend Implementation
 
 ### API Key Storage
@@ -82,42 +101,52 @@ const API_KEY_STORAGE_KEY = 'llm-api-key';
 **Storage Key:** `'llm-api-key'`
 
 ### Initialization Flow
+The initialization sequence now first asks the backend whether authentication is required, and only then proceeds with API key logic if necessary.
 
-On app initialization, the system checks for a stored API key:
+Updated logic:
 
-```31:55:static/app.js
-// Initialize the app
+```static/app.js
+async function checkAuthRequirement() {
+    const res = await fetch('/api/v1/auth-required');
+    if (!res.ok) return true; // conservative fallback
+    const data = await res.json();
+    return !!data.auth_required;
+}
+
 async function init() {
-    // Check for stored API key
+    const authRequired = await checkAuthRequirement();
+    if (!authRequired) {
+        showMainInterface();
+        loadChatsFromStorage();
+        await loadModels();
+        setupEventListeners();
+        return; // skip API key form entirely
+    }
+
     apiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
-    
     if (apiKey) {
-        // Validate stored API key
         const isValid = await validateApiKey(apiKey);
         if (isValid) {
             showMainInterface();
             loadChatsFromStorage();
             await loadModels();
             setupEventListeners();
-            renderPreviousChats();
         } else {
-            // Invalid key, clear it and show login
             clearApiKey();
             showLoginForm();
         }
     } else {
-        // No API key, show login form
         showLoginForm();
     }
-    
     setupLoginListeners();
 }
 ```
 
-**Flow:**
-1. Check localStorage for stored API key
-2. If found, validate it with backend
-3. If valid, show main interface
+**New Flow Summary:**
+1. Call `/api/v1/auth-required`.
+2. If `false` → load interface immediately (no key needed).
+3. If `true` → proceed with previous behavior (load/validate stored key or show login form).
+4. All subsequent protected requests include `X-API-Key` header when required.
 4. If invalid or missing, show login form
 
 ### Login Form
@@ -349,6 +378,7 @@ The application works normally without requiring API keys.
 2. No login form shown (main interface immediately)
 3. Requests sent without X-API-Key header
 4. Backend allows all requests (API_KEY is None)
+5. Frontend may periodically still call `/api/v1/auth-required` on reload; if admin later sets a key, next reload will show login.
 ```
 
 ## Security Considerations
@@ -388,6 +418,7 @@ The system maintains backward compatibility:
 - If `API_KEY` environment variable is not set, authentication is bypassed
 - Existing deployments without API keys continue to work
 - New deployments can optionally enable authentication
+- Frontend automatically adapts at runtime via `/api/v1/auth-required` detection
 
 ## Related Documentation
 
