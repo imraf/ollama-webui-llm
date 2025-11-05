@@ -7,15 +7,15 @@ This document contains the original prompts used in several stages of the app cr
 # Initial Prompts Given to Claude Sonnet 4.5
 
 ### Backend [Claude Sonnet 4.5]
-We are creating an LLM chatbot backend. Create a Flask server with the following endpoints: 
+```We are creating an LLM chatbot backend. Create a Flask server with the following endpoints: 
 1. /api/v1/response:
 accepts a POST request with: a.  user prompt, b. wanted model, c. optional context. The endpoint queries ollama through the default 11434 port on localhost, and returns the response.
 2. /api/v1/models: accepts a GET request and returns a list of available models on the current ollama install on localhost.
 3. /
-the index page will serve a static html+js page which we will create later.
+the index page will serve a static html+js page which we will create later.```
 
 ### Frontend [Claude Sonnet 4.5]
-We are going to create a web ui for an LLM chatbot. Create a static javascript, and include it in this html file. The UI should have the following properties:
+```We are going to create a web ui for an LLM chatbot. Create a static javascript, and include it in this html file. The UI should have the following properties:
 
 1. The main UI element is the conversation between the user and the language model. Under this conversation, include a text box where the user can type prompts. When sending a new prompt, the UI sends a request to the /api/v1/response endpoint. On response, the UI formats the response for markdown items such as lists, tables and titles. 
 
@@ -25,14 +25,14 @@ We are going to create a web ui for an LLM chatbot. Create a static javascript, 
 
 4. To the left, below the model select, there will be a button for "new chat" and below that, list of previous chats. When clicking "new chat", the current chat will be pushed to the list of previous chats, and the chat history will clear. The previous chat is saved to the browser's local storage. When clicking on a previous chat, load the chat from the local storage and display it in the chat area.
 
-Design the page to be minimalistic and clean. Make sure the resulting html, javascript and css are static (you may call or download additional js/css dynamically).
+Design the page to be minimalistic and clean. Make sure the resulting html, javascript and css are static (you may call or download additional js/css dynamically).```
 
 ### Readme [Claude Sonnet 4.5]
-Create a detailed, thorough and organized README.md file. Start with an overview of the project and include the screenshot (screenshot.jpg). Explain the project is meant for extremely easy setup on Python and Ollama without requiring node.
+```Create a detailed, thorough and organized README.md file. Start with an overview of the project and include the screenshot (screenshot.jpg). Explain the project is meant for extremely easy setup on Python and Ollama without requiring node.
 
  List the features, including prompting a local model (embed anim-chat-main.gif), ability to select a model from your ollama local models (embed anim-model-select.gif), ability to address previous messages (embed anim-chat-context.gif), and ability to load previous chats into the chat window (embed anim-previous-chats.gif).
 
-Include a setup and install section with instructions for Linux, Mac and Windows. Explain how to set up the project using uv, how to run the server and how to access the web ui. Include a link to Ollama's documentation on setting up and installing Ollama. 
+Include a setup and install section with instructions for Linux, Mac and Windows. Explain how to set up the project using uv, how to run the server and how to access the web ui. Include a link to Ollama's documentation on setting up and installing Ollama.```
 
 ---
 
