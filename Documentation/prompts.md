@@ -42,7 +42,7 @@ Include a setup and install section with instructions for Linux, Mac and Windows
 
 ---
 
-# Enhanced Prompts & Prompt Engineering
+# PRD & Documentation Prompts
 
 ## PRD Structure Research Prompt
 
